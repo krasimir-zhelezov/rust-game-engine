@@ -41,6 +41,9 @@ impl ApplicationHandler<State> for App {
                 _ => {
                     println!("Code: {:?}, State: {}", code, state.is_pressed())
                 }
+            },
+            WindowEvent::MouseInput { state, button , ..} => {
+                println!("Button: {:?}, State: {:?}", button, state);
             }
             _ => {}
         }
