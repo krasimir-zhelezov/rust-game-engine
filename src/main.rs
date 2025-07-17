@@ -7,7 +7,7 @@ mod app;
 mod application_handler;
 
 fn main() -> anyhow::Result<()> {
-    env_logger::init;
+    env_logger::init();
     
     let event_loop = EventLoop::with_user_event().build()?;
 
@@ -17,3 +17,4 @@ fn main() -> anyhow::Result<()> {
 
     Ok(())
 }
+

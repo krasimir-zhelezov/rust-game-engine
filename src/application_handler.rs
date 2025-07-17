@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use wgpu::{Surface, SurfaceError};
 use winit::{application::ApplicationHandler, event::{KeyEvent, WindowEvent}, event_loop::{ActiveEventLoop, EventLoop}, keyboard::{KeyCode, PhysicalKey}, window::Window};
 
 use crate::{app::App, state::State};
@@ -16,7 +17,7 @@ impl ApplicationHandler<State> for App {
     fn window_event(
         &mut self,
         event_loop: &winit::event_loop::ActiveEventLoop,
-        window_id: winit::window::WindowId,
+        _window_id: winit::window::WindowId,
         event: winit::event::WindowEvent,
     ) {
         let state = match &mut self.state {
@@ -27,24 +28,27 @@ impl ApplicationHandler<State> for App {
         match event {
             WindowEvent::CloseRequested => event_loop.exit(),
             WindowEvent::RedrawRequested => {
-                state.render();
+                match state.render() {
+                    Ok(_) => {}
+
+                    Err(SurfaceError::Lost | SurfaceError::Outdated) => {
+                        let size = state.window.inner_size();
+                        state.resize(size.width, size.height);
+                    }
+                    Err(e) => {
+                        log::error!("Unable to render {}", e);
+                    }
+                };
             },
             WindowEvent::KeyboardInput {
-                event: KeyEvent {
-                    physical_key: PhysicalKey::Code(code),
-                    state,
-                    ..
-                },
+                event:
+                    KeyEvent {
+                        physical_key: PhysicalKey::Code(code),
+                        state: key_state,
+                        ..
+                    },
                 ..
-            } => match (code, state.is_pressed()) {
-                (KeyCode::Escape, true) => event_loop.exit(),
-                _ => {
-                    println!("Code: {:?}, State: {}", code, state.is_pressed())
-                }
-            },
-            WindowEvent::MouseInput { state, button , ..} => {
-                println!("Button: {:?}, State: {:?}", button, state);
-            }
+            } => state.handle_key(event_loop, code, key_state.is_pressed()),        
             _ => {}
         }
     }
